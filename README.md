@@ -1,2 +1,2 @@
-# DenseNet
- PyTorch implements DenseNet
+# GoogLeNet
+ PyTorch implements GoogleNet.
