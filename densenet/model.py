@@ -1,23 +1,28 @@
+# Copyright 2020 Lorna Authors. All Rights Reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 import re
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from collections import OrderedDict
-from .utils import load_state_dict_from_url
 
+from .utils import densenet_params
+from .utils import get_model_params
 from .utils import bn_function_factory
-from .utils import load_state_dict
-
-
-__all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161']
-
-urls_map = {
-    'densenet121': 'https://download.pytorch.org/models/densenet121-a639ec97.pth',
-    'densenet161': 'https://download.pytorch.org/models/densenet161-8d451a50.pth',
-    'densenet169': 'https://download.pytorch.org/models/densenet169-b2777c0a.pth',
-    'densenet201': 'https://download.pytorch.org/models/densenet201-c1103571.pth',
-}
+from .utils import load_pretrained_weights
 
 
 class DenseLayer(nn.Sequential):
@@ -96,36 +101,41 @@ class DenseNet(nn.Module):
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
 
-    def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
-                 num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
+    def __init__(self, blocks_args=None, global_params=None):
+        # growth_rate=32, block_config=(6, 12, 24, 16),
+     #            num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
 
-        super(DenseNet, self).__init__()
+        super().__init__()
+        assert isinstance(blocks_args, list), 'blocks_args should be a list'
+        assert len(blocks_args) > 0, 'block args must be greater than 0'
+        self._global_params = global_params
+        self._blocks_args = blocks_args
 
         # First convolution
         self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2,
+            ('conv0', nn.Conv2d(3, self._global_params.num_init_features, kernel_size=7, stride=2,
                                 padding=3, bias=False)),
-            ('norm0', nn.BatchNorm2d(num_init_features)),
+            ('norm0', nn.BatchNorm2d(self._global_params.num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
             ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
         ]))
 
         # Each denseblock
-        num_features = num_init_features
-        for i, num_layers in enumerate(block_config):
+        num_features = self._global_params.num_init_features
+        for i, num_layers in enumerate(self._blocks_args):
             block = DenseBlock(
                 num_layers=num_layers,
                 num_input_features=num_features,
-                bn_size=bn_size,
-                growth_rate=growth_rate,
-                drop_rate=drop_rate,
-                memory_efficient=memory_efficient
+                bn_size=self._global_params.bn_size,
+                growth_rate=self._global_params.growth_rate,
+                drop_rate=self._global_params.drop_rate,
+                memory_efficient=self._global_params.memory_efficient
             )
             self.features.add_module('denseblock%d' % (i + 1), block)
-            num_features = num_features + num_layers * growth_rate
-            if i != len(block_config) - 1:
+            num_features = num_features + num_layers * self._global_params.growth_rate
+            if i != len(self._blocks_args) - 1:
                 trans = Transition(num_input_features=num_features,
-                                    num_output_features=num_features // 2)
+                                   num_output_features=num_features // 2)
                 self.features.add_module('transition%d' % (i + 1), trans)
                 num_features = num_features // 2
 
@@ -133,7 +143,7 @@ class DenseNet(nn.Module):
         self.features.add_module('norm5', nn.BatchNorm2d(num_features))
 
         # Linear layer
-        self.classifier = nn.Linear(num_features, num_classes)
+        self.classifier = nn.Linear(num_features, self._global_params.num_classes)
 
         # Official init from torch repo.
         for m in self.modules():
@@ -154,103 +164,28 @@ class DenseNet(nn.Module):
         return out
 
     @classmethod
-    def from_name(cls, model_name):
+    def from_name(cls, model_name, override_params=None):
         cls._check_model_name_is_valid(model_name)
         blocks_args, global_params = get_model_params(model_name, override_params)
         return cls(blocks_args, global_params)
 
     @classmethod
-    def from_pretrained(cls, model_name, num_classes=1000, in_channels = 3):
-        model = cls.from_name(model_name, override_params={'num_classes': num_classes})
-        load_pretrained_weights(model, model_name, load_fc=(num_classes == 1000))
-        if in_channels != 3:
-            Conv2d = get_same_padding_conv2d(image_size = model._global_params.image_size)
-            out_channels = round_filters(32, model._global_params)
-            model._conv_stem = Conv2d(in_channels, out_channels, kernel_size=3, stride=2, bias=False)
-        return model
-    
-    @classmethod
     def from_pretrained(cls, model_name, num_classes=1000):
         model = cls.from_name(model_name, override_params={'num_classes': num_classes})
         load_pretrained_weights(model, model_name, load_fc=(num_classes == 1000))
-
         return model
 
     @classmethod
     def get_image_size(cls, model_name):
         cls._check_model_name_is_valid(model_name)
-        res = 224
+        _, _, res = densenet_params(model_name)
         return res
 
     @classmethod
     def _check_model_name_is_valid(cls, model_name):
         """ Validates model name. None that pretrained weights are only available for
         the first four models (densenet{i} for i in 121,161,169,201) at the moment. """
-        num_models = [121,161,169,201]
-        valid_models = ['densenet'+str(i) for i in range(num_models)]
+        num_models = [121, 161, 169, 201]
+        valid_models = ['densenet' + str(i) for i in num_models]
         if model_name not in valid_models:
             raise ValueError('model_name should be one of: ' + ', '.join(valid_models))
-
-
-def densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress,
-              **kwargs):
-    model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
-    if pretrained:
-        _load_state_dict(model, urls_map[arch], progress)
-    return model
-
-
-def densenet121(pretrained=False, progress=True, **kwargs):
-    r"""Densenet-121 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
-    """
-    return densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress,
-                     **kwargs)
-
-
-def densenet161(pretrained=False, progress=True, **kwargs):
-    r"""Densenet-161 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
-    """
-    return densenet('densenet161', 48, (6, 12, 36, 24), 96, pretrained, progress,
-                     **kwargs)
-
-
-def densenet169(pretrained=False, progress=True, **kwargs):
-    r"""Densenet-169 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
-    """
-    return densenet('densenet169', 32, (6, 12, 32, 32), 64, pretrained, progress,
-                     **kwargs)
-
-
-def densenet201(pretrained=False, progress=True, **kwargs):
-    r"""Densenet-201 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
-    """
-    return densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
-                     **kwargs)
