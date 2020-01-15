@@ -28,14 +28,14 @@ from .utils import load_pretrained_weights
 class DenseLayer(nn.Sequential):
     def __init__(self, num_input_features, growth_rate, bn_size, drop_rate, memory_efficient=False):
         super(DenseLayer, self).__init__()
-        self.add_module('norm1', nn.BatchNorm2d(num_input_features)),
-        self.add_module('relu1', nn.ReLU(inplace=True)),
-        self.add_module('conv1', nn.Conv2d(num_input_features, bn_size *
+        self.add_module("norm1", nn.BatchNorm2d(num_input_features)),
+        self.add_module("relu1", nn.ReLU(inplace=True)),
+        self.add_module("conv1", nn.Conv2d(num_input_features, bn_size *
                                            growth_rate, kernel_size=1, stride=1,
                                            bias=False)),
-        self.add_module('norm2', nn.BatchNorm2d(bn_size * growth_rate)),
-        self.add_module('relu2', nn.ReLU(inplace=True)),
-        self.add_module('conv2', nn.Conv2d(bn_size * growth_rate, growth_rate,
+        self.add_module("norm2", nn.BatchNorm2d(bn_size * growth_rate)),
+        self.add_module("relu2", nn.ReLU(inplace=True)),
+        self.add_module("conv2", nn.Conv2d(bn_size * growth_rate, growth_rate,
                                            kernel_size=3, stride=1, padding=1,
                                            bias=False)),
         self.drop_rate = drop_rate
@@ -65,7 +65,7 @@ class DenseBlock(nn.Module):
                 drop_rate=drop_rate,
                 memory_efficient=memory_efficient,
             )
-            self.add_module('denselayer%d' % (i + 1), layer)
+            self.add_module(f"denselayer{i + 1}", layer)
 
     def forward(self, init_features):
         features = [init_features]
@@ -78,27 +78,16 @@ class DenseBlock(nn.Module):
 class Transition(nn.Sequential):
     def __init__(self, num_input_features, num_output_features):
         super(Transition, self).__init__()
-        self.add_module('norm', nn.BatchNorm2d(num_input_features))
-        self.add_module('relu', nn.ReLU(inplace=True))
-        self.add_module('conv', nn.Conv2d(num_input_features, num_output_features,
+        self.add_module("norm", nn.BatchNorm2d(num_input_features))
+        self.add_module("relu", nn.ReLU(inplace=True))
+        self.add_module("conv", nn.Conv2d(num_input_features, num_output_features,
                                           kernel_size=1, stride=1, bias=False))
-        self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2))
+        self.add_module("pool", nn.AvgPool2d(kernel_size=2, stride=2))
 
 
 class DenseNet(nn.Module):
-    r"""Densenet-BC model class, based on
+    """Densenet-BC model class, based on
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        growth_rate (int) - how many filters to add each layer (`k` in paper)
-        block_config (list of 4 ints) - how many layers in each pooling block
-        num_init_features (int) - the number of filters to learn in the first convolution layer
-        bn_size (int) - multiplicative factor for number of bottle neck layers
-          (i.e. bn_size * k features in the bottleneck layer)
-        drop_rate (float) - dropout rate after each dense layer
-        num_classes (int) - number of classification classes
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
 
     def __init__(self, blocks_args=None, global_params=None):
@@ -106,18 +95,18 @@ class DenseNet(nn.Module):
      #            num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
 
         super().__init__()
-        assert isinstance(blocks_args, list), 'blocks_args should be a list'
-        assert len(blocks_args) > 0, 'block args must be greater than 0'
+        assert isinstance(blocks_args, list), "blocks_args should be a list"
+        assert len(blocks_args) > 0, "block args must be greater than 0"
         self._global_params = global_params
         self._blocks_args = blocks_args
 
         # First convolution
         self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv2d(3, self._global_params.num_init_features, kernel_size=7, stride=2,
+            ("conv0", nn.Conv2d(3, self._global_params.num_init_features, kernel_size=7, stride=2,
                                 padding=3, bias=False)),
-            ('norm0', nn.BatchNorm2d(self._global_params.num_init_features)),
-            ('relu0', nn.ReLU(inplace=True)),
-            ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
+            ("norm0", nn.BatchNorm2d(self._global_params.num_init_features)),
+            ("relu0", nn.ReLU(inplace=True)),
+            ("pool0", nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
         ]))
 
         # Each denseblock
@@ -131,16 +120,16 @@ class DenseNet(nn.Module):
                 drop_rate=self._global_params.drop_rate,
                 memory_efficient=self._global_params.memory_efficient
             )
-            self.features.add_module('denseblock%d' % (i + 1), block)
+            self.features.add_module(f"denseblock{i + 1}", block)
             num_features = num_features + num_layers * self._global_params.growth_rate
             if i != len(self._blocks_args) - 1:
                 trans = Transition(num_input_features=num_features,
                                    num_output_features=num_features // 2)
-                self.features.add_module('transition%d' % (i + 1), trans)
+                self.features.add_module(f"transition{i + 1}", trans)
                 num_features = num_features // 2
 
         # Final batch norm
-        self.features.add_module('norm5', nn.BatchNorm2d(num_features))
+        self.features.add_module("norm5", nn.BatchNorm2d(num_features))
 
         # Linear layer
         self.classifier = nn.Linear(num_features, self._global_params.num_classes)
@@ -171,7 +160,7 @@ class DenseNet(nn.Module):
 
     @classmethod
     def from_pretrained(cls, model_name, num_classes=1000):
-        model = cls.from_name(model_name, override_params={'num_classes': num_classes})
+        model = cls.from_name(model_name, override_params={"num_classes": num_classes})
         load_pretrained_weights(model, model_name, load_fc=(num_classes == 1000))
         return model
 
@@ -186,6 +175,6 @@ class DenseNet(nn.Module):
         """ Validates model name. None that pretrained weights are only available for
         the first four models (densenet{i} for i in 121,161,169,201) at the moment. """
         num_models = [121, 161, 169, 201]
-        valid_models = ['densenet' + str(i) for i in num_models]
+        valid_models = ["densenet" + str(i) for i in num_models]
         if model_name not in valid_models:
-            raise ValueError('model_name should be one of: ' + ', '.join(valid_models))
+            raise ValueError("model_name should be one of: " + ", ".join(valid_models))
