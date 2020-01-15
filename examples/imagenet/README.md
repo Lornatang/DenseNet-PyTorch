@@ -7,11 +7,11 @@ For now, only evaluation is supported, but I am currently building scripts to as
 Example commands: 
 ```bash
 # Evaluate small DenseNet on CPU
-python main.py data -e -a DenseNet121 --pretrained 
+python main.py data -e -a densenet121 --pretrained 
 ```
 ```bash
 # Evaluate medium DenseNet on GPU
-python main.py data -e -a DenseNet121 --pretrained --gpu 0 --batch-size 128
+python main.py data -e -a densenet121 --pretrained --gpu 0 --batch-size 128
 ```
 ```bash
 # Evaluate ResNet-50 for comparison
