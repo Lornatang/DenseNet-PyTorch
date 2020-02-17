@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+__version__ = "0.1.0"
 
-__version__ = "0.3.0"
 from .model import DenseNet
 from .utils import GlobalParams
 from .utils import BlockArgs
 from .utils import densenet
 from .utils import get_model_params
-

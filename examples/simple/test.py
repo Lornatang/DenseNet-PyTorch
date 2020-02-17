@@ -21,7 +21,7 @@ import json
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-from densenet import DenseNet
+from densenet_pytorch import DenseNet
 
 image_size = 224
 
@@ -38,11 +38,10 @@ img = tfms(img).unsqueeze(0)
 labels_map = json.load(open("labels_map.txt"))
 labels_map = [labels_map[str(i)] for i in range(1000)]
 
-# Classify with AlexNet
-print("=> loading checkpoint 'DenseNet121'.")
+# Classify with DenseNet121
 model = DenseNet.from_pretrained("densenet121")
-print("=> loaded checkpoint 'DenseNet121'.")
 model.eval()
+
 with torch.no_grad():
     logits = model(img)
 preds = torch.topk(logits, k=5).indices.squeeze(0).tolist()

@@ -1,4 +1,4 @@
-# DenseNet
+# DenseNet-PyTorch
 
 Now supports the more efficient DenseNet-BC (DenseNet-Bottleneck-Compressed) networks. Using the DenseNet-BC-190-40 model, it obtaines state of the art performance on CIFAR-10 and CIFAR-100.
 
@@ -11,7 +11,7 @@ This update allows you to use NVIDIA's Apex tool for accelerated training. By de
 This update adds a modular neural network, making it more flexible in use. It can be deployed to many common dataset classification tasks. Of course, it can also be used in your products.
 
 ### Overview
-This repository contains an op-for-op PyTorch reimplementation of [DenseNet](https://arxiv.org/pdf/1608.06993.pdf).
+This repository contains an op-for-op PyTorch reimplementation of [Densely Connected Convolutional Networks](https://arxiv.org/pdf/1608.06993.pdf).
 
 The goal of this implementation is to be simple, highly extensible, and easy to integrate into your own projects. This implementation is a work in progress -- new features are currently being implemented.  
 
@@ -39,11 +39,16 @@ Recent work has shown that convolutional networks can be substantially deeper, m
 
 ### Installation
 
+Install from pypi:
+```bash
+pip install densenet_pytorch
+```
+
 Install from source:
 ```bash
-git clone https://github.com/lornatang/DenseNet
-cd DenseNet
-python setup.py install
+git clone https://github.com/Lornatang/DenseNet-PyTorch
+cd DenseNet-PyTorch
+pip install -e .
 ``` 
 
 ### Usage
@@ -52,13 +57,13 @@ python setup.py install
 
 Load an densenet121 network:
 ```python
-from densenet import DenseNet
+from densenet_pytorch import DenseNet
 model = DenseNet.from_name("densenet121")
 ```
 
 Load a pretrained densenet11: 
 ```python
-from densenet import DenseNet
+from densenet_pytorch import DenseNet
 model = DenseNet.from_pretrained("densenet121")
 ```
 
@@ -77,7 +82,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 
-from densenet import DenseNet
+from densenet_pytorch import DenseNet
 model = DenseNet.from_pretrained("densenet121")
 
 # Preprocess image

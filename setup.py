@@ -12,13 +12,13 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'densenet'
+NAME = 'densenet_pytorch'
 DESCRIPTION = 'DenseNet implements of PyTorch.'
 URL = 'https://github.com/lornatang/DenseNet'
 EMAIL = 'liuchangyu1111@gmail.com'
 AUTHOR = 'Changyu'
 REQUIRES_PYTHON = '>=3.5.0'
-VERSION = '0.3.0'
+VERSION = '0.1.0'
 
 # What packages are required for this module to be executed?
 REQUIRED = [

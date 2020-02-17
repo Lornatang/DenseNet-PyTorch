@@ -39,7 +39,7 @@ import torchvision.datasets as datasets
 import torchvision.models as models
 
 from apex import amp
-from densenet import DenseNet
+from densenet_pytorch import DenseNet
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR', default='data',
@@ -151,7 +151,7 @@ def main_worker(gpu, ngpus_per_node, args):
         dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
                                 world_size=args.world_size, rank=args.rank)
     # create model
-    if 'densenet' in args.arch:  # NEW
+    if 'densenet_pytorch' in args.arch:  # NEW
         if args.pretrained:
             model = DenseNet.from_pretrained(args.arch, num_classes=args.num_classes)
             print("=> using pre-trained model '{}'".format(args.arch))
@@ -248,7 +248,7 @@ def main_worker(gpu, ngpus_per_node, args):
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
-    if 'densenet' in args.arch:
+    if 'densenet_pytorch' in args.arch:
         image_size = DenseNet.get_image_size(args.arch)
         val_transforms = transforms.Compose([
             transforms.Resize(image_size, interpolation=PIL.Image.BICUBIC),
