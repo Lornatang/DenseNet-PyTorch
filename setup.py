@@ -13,19 +13,16 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'densenet_pytorch'
-DESCRIPTION = 'DenseNet implements of PyTorch.'
-URL = 'https://github.com/lornatang/DenseNet'
+DESCRIPTION = 'Restore the official code 100% and improve it to make it easier to research and facilitate production.'
+URL = 'https://github.com/lornatang/DenseNet-PyTorch'
 EMAIL = 'liuchangyu1111@gmail.com'
-AUTHOR = 'Changyu'
+AUTHOR = 'Liu Changyu'
 REQUIRES_PYTHON = '>=3.5.0'
-VERSION = '0.1.0'
+VERSION = '0.1.3'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
     'torch',
-    'pillow',
-    'torchvision',
-    'pyqt5'
 ]
 
 # What packages are optional?

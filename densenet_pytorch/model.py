@@ -11,14 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from collections import OrderedDict
-
+import re
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
+from collections import OrderedDict
+from torch import Tensor
+from torch.jit.annotations import List
 
-from .utils import bn_function_factory
 from .utils import densenet_params
 from .utils import get_model_params
 from .utils import load_pretrained_weights
@@ -27,25 +28,66 @@ from .utils import load_pretrained_weights
 class DenseLayer(nn.Sequential):
   def __init__(self, num_input_features, growth_rate, bn_size, drop_rate, memory_efficient=False):
     super(DenseLayer, self).__init__()
-    self.add_module("norm1", nn.BatchNorm2d(num_input_features)),
-    self.add_module("relu1", nn.ReLU(inplace=True)),
-    self.add_module("conv1", nn.Conv2d(num_input_features, bn_size *
+    self.add_module('norm1', nn.BatchNorm2d(num_input_features)),
+    self.add_module('relu1', nn.ReLU(inplace=True)),
+    self.add_module('conv1', nn.Conv2d(num_input_features, bn_size *
                                        growth_rate, kernel_size=1, stride=1,
                                        bias=False)),
-    self.add_module("norm2", nn.BatchNorm2d(bn_size * growth_rate)),
-    self.add_module("relu2", nn.ReLU(inplace=True)),
-    self.add_module("conv2", nn.Conv2d(bn_size * growth_rate, growth_rate,
+    self.add_module('norm2', nn.BatchNorm2d(bn_size * growth_rate)),
+    self.add_module('relu2', nn.ReLU(inplace=True)),
+    self.add_module('conv2', nn.Conv2d(bn_size * growth_rate, growth_rate,
                                        kernel_size=3, stride=1, padding=1,
                                        bias=False)),
-    self.drop_rate = drop_rate
+    self.drop_rate = float(drop_rate)
     self.memory_efficient = memory_efficient
 
-  def forward(self, *prev_features):
-    bn_function = bn_function_factory(self.norm1, self.relu1, self.conv1)
-    if self.memory_efficient and any(prev_feature.requires_grad for prev_feature in prev_features):
-      bottleneck_output = cp.checkpoint(bn_function, *prev_features)
+  def bn_function(self, inputs):
+    # type: (List[Tensor]) -> Tensor
+    concated_features = torch.cat(inputs, 1)
+    bottleneck_output = self.conv1(self.relu1(self.norm1(concated_features)))
+    return bottleneck_output
+
+  def any_requires_grad(self, inputs):
+    # type: (List[Tensor]) -> bool
+    for tensor in inputs:
+      if tensor.requires_grad:
+        return True
+    return False
+
+  @torch.jit.unused
+  def call_checkpoint_bottleneck(self, x):
+    # type: (List[Tensor]) -> Tensor
+    def closure(*inputs):
+      return self.bn_function(*inputs)
+
+    return cp.checkpoint(closure, x)
+
+  @torch.jit._overload_method
+  def forward(self, inputs):
+    # type: (List[Tensor]) -> (Tensor)
+    pass
+
+  @torch.jit._overload_method
+  def forward(self, inputs):
+    # type: (Tensor) -> (Tensor)
+    pass
+
+  # torchscript does not yet support *args, so we overload method
+  # allowing it to take either a List[Tensor] or single Tensor
+  def forward(self, inputs):  # noqa: F811
+    if isinstance(inputs, Tensor):
+      prev_features = [inputs]
     else:
-      bottleneck_output = bn_function(*prev_features)
+      prev_features = inputs
+
+    if self.memory_efficient and self.any_requires_grad(prev_features):
+      if torch.jit.is_scripting():
+        raise Exception("Memory Efficient not supported in JIT")
+
+      bottleneck_output = self.call_checkpoint_bottleneck(prev_features)
+    else:
+      bottleneck_output = self.bn_function(prev_features)
+
     new_features = self.conv2(self.relu2(self.norm2(bottleneck_output)))
     if self.drop_rate > 0:
       new_features = F.dropout(new_features, p=self.drop_rate,
@@ -57,19 +99,19 @@ class DenseBlock(nn.Module):
   def __init__(self, num_layers, num_input_features, bn_size, growth_rate, drop_rate, memory_efficient=False):
     super(DenseBlock, self).__init__()
     for i in range(num_layers):
-      layer = DenseLayer(
+      layer = _DenseLayer(
         num_input_features + i * growth_rate,
         growth_rate=growth_rate,
         bn_size=bn_size,
         drop_rate=drop_rate,
         memory_efficient=memory_efficient,
       )
-      self.add_module(f"denselayer{i + 1}", layer)
+      self.add_module('denselayer%d' % (i + 1), layer)
 
   def forward(self, init_features):
     features = [init_features]
-    for name, layer in self.named_children():
-      new_features = layer(*features)
+    for name, layer in self.items():
+      new_features = layer(features)
       features.append(new_features)
     return torch.cat(features, 1)
 
@@ -77,11 +119,11 @@ class DenseBlock(nn.Module):
 class Transition(nn.Sequential):
   def __init__(self, num_input_features, num_output_features):
     super(Transition, self).__init__()
-    self.add_module("norm", nn.BatchNorm2d(num_input_features))
-    self.add_module("relu", nn.ReLU(inplace=True))
-    self.add_module("conv", nn.Conv2d(num_input_features, num_output_features,
+    self.add_module('norm', nn.BatchNorm2d(num_input_features))
+    self.add_module('relu', nn.ReLU(inplace=True))
+    self.add_module('conv', nn.Conv2d(num_input_features, num_output_features,
                                       kernel_size=1, stride=1, bias=False))
-    self.add_module("pool", nn.AvgPool2d(kernel_size=2, stride=2))
+    self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2))
 
 
 class DenseNet(nn.Module):
@@ -90,10 +132,21 @@ class DenseNet(nn.Module):
   """
 
   def __init__(self, blocks_args=None, global_params=None):
-    # growth_rate=32, block_config=(6, 12, 24, 16),
-    # num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
+    r"""Densenet-BC model class, based on
+        `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+    Args:
+      growth_rate (int) - how many filters to add each layer (`k` in paper)
+      block_config (list of 4 ints) - how many layers in each pooling block
+      num_init_features (int) - the number of filters to learn in the first convolution layer
+      bn_size (int) - multiplicative factor for number of bottle neck layers
+        (i.e. bn_size * k features in the bottleneck layer)
+      drop_rate (float) - dropout rate after each dense layer
+      num_classes (int) - number of classification classes
+      memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
+        but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
+    """
 
-    super().__init__()
+    super(DenseNet, self).__init__()
     assert isinstance(blocks_args, list), "blocks_args should be a list"
     assert len(blocks_args) > 0, "block args must be greater than 0"
     self._global_params = global_params
@@ -119,12 +172,12 @@ class DenseNet(nn.Module):
         drop_rate=self._global_params.drop_rate,
         memory_efficient=self._global_params.memory_efficient
       )
-      self.features.add_module(f"denseblock{i + 1}", block)
+      self.features.add_module('denseblock%d' % (i + 1), block)
       num_features = num_features + num_layers * self._global_params.growth_rate
       if i != len(self._blocks_args) - 1:
-        trans = Transition(num_input_features=num_features,
-                           num_output_features=num_features // 2)
-        self.features.add_module(f"transition{i + 1}", trans)
+        trans = _Transition(num_input_features=num_features,
+                            num_output_features=num_features // 2)
+        self.features.add_module('transition%d' % (i + 1), trans)
         num_features = num_features // 2
 
     # Final batch norm
@@ -146,8 +199,8 @@ class DenseNet(nn.Module):
         nn.init.normal_(m.weight, 0, 0.01)
         nn.init.constant_(m.bias, 0)
 
-  def forward(self, x):
-    features = self.features(x)
+  def forward(self, inputs):
+    features = self.features(inputs)
     out = F.relu(features, inplace=True)
     out = F.adaptive_avg_pool2d(out, (1, 1))
     out = torch.flatten(out, 1)

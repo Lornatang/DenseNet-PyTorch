@@ -13,8 +13,10 @@
 # ==============================================================================
 import collections
 import re
+import ssl
 
 import torch
+from torch import Tensor
 from torch.utils import model_zoo
 
 ########################################################################
@@ -34,16 +36,6 @@ BlockArgs = collections.namedtuple('BlockArgs', [
 # Change namedtuple defaults
 GlobalParams.__new__.__defaults__ = (None,) * len(GlobalParams._fields)
 BlockArgs.__new__.__defaults__ = (None,) * len(BlockArgs._fields)
-
-
-def bn_function_factory(norm, relu, conv):
-  def bn_function(*inputs):
-    concated_features = torch.cat(inputs, 1)
-    bottleneck_output = conv(relu(norm(concated_features)))
-    return bottleneck_output
-
-  return bn_function
-
 
 ########################################################################
 ############## HELPERS FUNCTIONS FOR LOADING MODEL PARAMS ##############
@@ -95,7 +87,7 @@ def get_model_params(model_name, override_params):
     blocks_args, global_params = densenet(
       model_name=model_name, growth_rate=g, num_init_features=n, image_size=s)
   else:
-    raise NotImplementedError('model name is not pre-defined: %s' % model_name)
+    raise NotImplementedError(f'model name is not pre-defined: {model_name}')
   if override_params:
     # ValueError will be raised here if override_params has fields not included in global_params.
     global_params = global_params._replace(**override_params)
@@ -111,10 +103,16 @@ urls_map = {
 
 
 def load_pretrained_weights(model, model_name, load_fc=True):
-  # '.'s are no longer allowed in module names, but previous DenseLayer
-  # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
-  # They are also in the checkpoints in urls_map. This pattern is used
-  # to find such keys.
+  """ Loads pretrained weights, and downloads if loading for the first time. """
+  try:
+    _create_unverified_https_context = ssl._create_unverified_context
+  except AttributeError:
+    # Legacy Python that doesn't verify HTTPS certificates by default
+    pass
+  else:
+    # Handle target environment that doesn't support HTTPS verification
+    ssl._create_default_https_context = _create_unverified_https_context
+
   state_dict = model_zoo.load_url(urls_map[model_name])
   if load_fc:
     pattern = re.compile(
@@ -130,5 +128,8 @@ def load_pretrained_weights(model, model_name, load_fc=True):
   else:
     state_dict.pop('classifier.weight')
     state_dict.pop('classifier.bias')
-    model.load_state_dict(state_dict, strict=False)
-  print(f"Loaded pretrained weights for {model_name}.")
+    res = model.load_state_dict(state_dict, strict=False)
+    assert set(res.missing_keys) == {"classifier.weight",
+                                     "classifier.bias"}, \
+      "issue loading pretrained weights"
+  print(f"Loaded pretrained weights for {model_name}")
