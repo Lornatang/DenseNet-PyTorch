@@ -9,10 +9,12 @@ Example commands:
 # Evaluate small DenseNet on CPU
 python main.py data -e -a densenet121 --pretrained 
 ```
+
 ```bash
 # Evaluate medium DenseNet on GPU
 python main.py data -e -a densenet121 --pretrained --gpu 0 --batch-size 128
 ```
+
 ```bash
 # Evaluate ResNet-50 for comparison
 python main.py data -e -a resnet50 --pretrained --gpu 0
