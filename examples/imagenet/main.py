@@ -24,7 +24,6 @@ import shutil
 import time
 import warnings
 
-import PIL.Image
 import torch
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -183,7 +182,7 @@ def main_worker(gpu, ngpus_per_node, args):
     model = model.cuda(args.gpu)
   else:
     # DataParallel will divide and allocate batch_size to all available GPUs
-    if args.arch.startswith('googlenet'):
+    if args.arch.startswith('densenet'):
       model.features = torch.nn.DataParallel(model.features)
       model.cuda()
     else:
@@ -242,23 +241,14 @@ def main_worker(gpu, ngpus_per_node, args):
     train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
     num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
-  if 'googlenet' in args.arch:
-    val_transforms = transforms.Compose([
-      transforms.Resize(256),
-      transforms.CenterCrop(224),
-      transforms.ToTensor(),
-      normalize,
-    ])
-    print('Using image size', 224)
-  else:
-    image_size = DenseNet.get_image_size(args.arch)
-    val_transforms = transforms.Compose([
-      transforms.Resize(image_size, interpolation=PIL.Image.BICUBIC),
-      transforms.CenterCrop(image_size),
-      transforms.ToTensor(),
-      normalize,
-    ])
-    print('Using image size', image_size)
+  image_size = DenseNet.get_image_size(args.arch)
+  val_transforms = transforms.Compose([
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    normalize,
+  ])
+  print(f"Using image size {image_size}")
 
   val_loader = torch.utils.data.DataLoader(
     datasets.ImageFolder(valdir, val_transforms),
@@ -306,7 +296,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
   top5 = AverageMeter('Acc@5', ':6.2f')
   progress = ProgressMeter(len(train_loader),
                            batch_time, data_time, losses, top1, top5,
-                           prefix="Epoch: [{}]".format(epoch))
+                           prefix=f"Epoch: [{epoch}]")
 
   # switch to train mode
   model.train()
@@ -321,7 +311,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     target = target.cuda(args.gpu, non_blocking=True)
 
     # compute output
-    output, _, _ = model(images)
+    output = model(images)
     loss = criterion(output, target)
 
     # measure accuracy and record loss
@@ -332,9 +322,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
     # compute gradient and do Adam step
     optimizer.zero_grad()
-    loss.backward()
-    # with amp.scale_loss(loss, optimizer) as scaled_loss:
-    #   scaled_loss.backward()
+    with amp.scale_loss(loss, optimizer) as scaled_loss:
+      scaled_loss.backward()
     optimizer.step()
 
     # measure elapsed time
@@ -381,8 +370,7 @@ def validate(val_loader, model, criterion, args):
       if i % args.print_freq == 0:
         progress.print(i)
 
-    print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-          .format(top1=top1, top5=top5))
+    print(f" * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}")
 
   return top1.avg
 
