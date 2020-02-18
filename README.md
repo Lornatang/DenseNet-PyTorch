@@ -44,6 +44,9 @@ _Upcoming features_: In the next few days, you will be able to:
 3. [Usage](#usage)
     * [Load pretrained models](#loading-pretrained-models)
     * [Example: Classify](#example-classification)
+    * [Example: Extract features](#example-feature-extraction)
+    * [Example: Export to ONNX](#example-export-to-onnx)
+    * [Example: Visual](#example-visual)
 4. [Contributing](#contributing) 
 
 ### About DenseNet
