@@ -15,6 +15,5 @@ __version__ = "0.1.3"
 
 from .model import DenseNet
 from .utils import GlobalParams
-from .utils import BlockArgs
 from .utils import densenet
 from .utils import get_model_params

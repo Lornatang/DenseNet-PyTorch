@@ -15,8 +15,8 @@ import collections
 import re
 import ssl
 
-import torch
 from torch import Tensor
+from torch.jit.annotations import List
 from torch.utils import model_zoo
 
 ########################################################################
@@ -25,17 +25,21 @@ from torch.utils import model_zoo
 
 
 # Parameters for the entire model (stem, all blocks, and head)
-GlobalParams = collections.namedtuple('GlobalParams', [
-  'growth_rate', 'num_init_features', 'bn_size', 'drop_rate',
-  'memory_efficient', 'num_classes', 'image_size'])
-
-# Parameters for an individual model block
-BlockArgs = collections.namedtuple('BlockArgs', [
-  'num_layers'])
+GlobalParams = collections.namedtuple("GlobalParams", [
+  "growth_rate", "num_init_features", "bn_size", "drop_rate",
+  "memory_efficient", "num_classes", "image_size"])
 
 # Change namedtuple defaults
 GlobalParams.__new__.__defaults__ = (None,) * len(GlobalParams._fields)
-BlockArgs.__new__.__defaults__ = (None,) * len(BlockArgs._fields)
+
+
+def any_requires_grad(inputs):
+  # type: (List[Tensor]) -> bool
+  for tensor in inputs:
+    if tensor.requires_grad:
+      return True
+  return False
+
 
 ########################################################################
 ############## HELPERS FUNCTIONS FOR LOADING MODEL PARAMS ##############
@@ -46,10 +50,10 @@ def densenet_params(model_name):
   """ Map densenet_pytorch model name to parameter coefficients. """
   params_dict = {
     # Coefficients:   growth_rate, num_init_features, res
-    'densenet121': (32, 64, 224),
-    'densenet161': (48, 96, 224),
-    'densenet169': (32, 64, 224),
-    'densenet201': (32, 64, 224),
+    "densenet121": (32, 64, 224),
+    "densenet161": (48, 96, 224),
+    "densenet169": (32, 64, 224),
+    "densenet201": (32, 64, 224),
   }
   return params_dict[model_name]
 
@@ -59,10 +63,10 @@ def densenet(model_name, growth_rate, num_init_features, image_size=224,
   """ Creates a densenet_pytorch model. """
 
   blocks_dict = {
-    'densenet121': (6, 12, 24, 16),
-    'densenet161': (6, 12, 36, 24),
-    'densenet169': (6, 12, 36, 32),
-    'densenet201': (6, 12, 48, 32),
+    "densenet121": (6, 12, 24, 16),
+    "densenet161": (6, 12, 36, 24),
+    "densenet169": (6, 12, 36, 32),
+    "densenet201": (6, 12, 48, 32),
   }
 
   blocks_args = blocks_dict[model_name]
@@ -82,23 +86,23 @@ def densenet(model_name, growth_rate, num_init_features, image_size=224,
 
 def get_model_params(model_name, override_params):
   """ Get the block args and global params for a given model """
-  if model_name.startswith('densenet'):
+  if model_name.startswith("densenet"):
     g, n, s = densenet_params(model_name)
     blocks_args, global_params = densenet(
       model_name=model_name, growth_rate=g, num_init_features=n, image_size=s)
   else:
-    raise NotImplementedError(f'model name is not pre-defined: {model_name}')
+    raise NotImplementedError(f"model name is not pre-defined: {model_name}")
   if override_params:
     # ValueError will be raised here if override_params has fields not included in global_params.
     global_params = global_params._replace(**override_params)
-  return list(blocks_args), global_params
+  return blocks_args, global_params
 
 
 urls_map = {
-  'densenet121': 'https://download.pytorch.org/models/densenet121-a639ec97.pth',
-  'densenet161': 'https://download.pytorch.org/models/densenet161-8d451a50.pth',
-  'densenet169': 'https://download.pytorch.org/models/densenet169-b2777c0a.pth',
-  'densenet201': 'https://download.pytorch.org/models/densenet201-c1103571.pth',
+  "densenet121": "https://download.pytorch.org/models/densenet121-a639ec97.pth",
+  "densenet161": "https://download.pytorch.org/models/densenet161-8d451a50.pth",
+  "densenet169": "https://download.pytorch.org/models/densenet169-b2777c0a.pth",
+  "densenet201": "https://download.pytorch.org/models/densenet201-c1103571.pth",
 }
 
 
@@ -107,10 +111,10 @@ def load_pretrained_weights(model, model_name, load_fc=True):
   try:
     _create_unverified_https_context = ssl._create_unverified_context
   except AttributeError:
-    # Legacy Python that doesn't verify HTTPS certificates by default
+    # Legacy Python that doesn"t verify HTTPS certificates by default
     pass
   else:
-    # Handle target environment that doesn't support HTTPS verification
+    # Handle target environment that doesn"t support HTTPS verification
     ssl._create_default_https_context = _create_unverified_https_context
 
   state_dict = model_zoo.load_url(urls_map[model_name])
@@ -126,8 +130,8 @@ def load_pretrained_weights(model, model_name, load_fc=True):
         del state_dict[key]
     model.load_state_dict(state_dict)
   else:
-    state_dict.pop('classifier.weight')
-    state_dict.pop('classifier.bias')
+    state_dict.pop("classifier.weight")
+    state_dict.pop("classifier.bias")
     res = model.load_state_dict(state_dict, strict=False)
     assert set(res.missing_keys) == {"classifier.weight",
                                      "classifier.bias"}, \
