@@ -65,7 +65,7 @@ def densenet(model_name, growth_rate, num_init_features, image_size=224,
   blocks_dict = {
     "densenet121": (6, 12, 24, 16),
     "densenet161": (6, 12, 36, 24),
-    "densenet169": (6, 12, 36, 32),
+    "densenet169": (6, 12, 32, 32),
     "densenet201": (6, 12, 48, 32),
   }
 
