@@ -59,14 +59,14 @@ Dense Convolutional Network (DenseNet), connects each layer to every other layer
 
 Install from pypi:
 ```bash
-pip install densenet_pytorch
+$ pip3 install densenet_pytorch
 ```
 
 Install from source:
 ```bash
-git clone https://github.com/Lornatang/DenseNet-PyTorch
-cd DenseNet-PyTorch
-pip install -e .
+$ git clone https://github.com/Lornatang/DenseNet-PyTorch
+$ cd DenseNet-PyTorch
+$ pip3 install -e .
 ``` 
 
 ### Usage
