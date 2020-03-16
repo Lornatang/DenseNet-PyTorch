@@ -14,11 +14,11 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = 'densenet_pytorch'
 DESCRIPTION = 'Restore the official code 100% and improve it to make it easier to research and facilitate production.'
-URL = 'https://github.com/lornatang/DenseNet-PyTorch'
+URL = 'https://github.com/Lornatang/DenseNet-PyTorch'
 EMAIL = 'liuchangyu1111@gmail.com'
 AUTHOR = 'Liu Changyu'
-REQUIRES_PYTHON = '>=3.5.0'
-VERSION = '0.1.5'
+REQUIRES_PYTHON = '>=3.6.0'
+VERSION = '0.2.0'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -122,6 +122,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
     # $ setup.py publish support.

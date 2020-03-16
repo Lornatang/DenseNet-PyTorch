@@ -119,10 +119,10 @@ input_image = Image.open("img.jpg")
 
 # Preprocess image
 preprocess = transforms.Compose([
-  transforms.Resize(256),
-  transforms.CenterCrop(224),
-  transforms.ToTensor(),
-  transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 input_tensor = preprocess(input_image)
 input_batch = input_tensor.unsqueeze(0)  # create a mini-batch as expected by the model
@@ -137,18 +137,18 @@ model.eval()
 
 # move the input and model to GPU for speed if available
 if torch.cuda.is_available():
-  input_batch = input_batch.to("cuda")
-  model.to("cuda")
+    input_batch = input_batch.to("cuda")
+    model.to("cuda")
 
 with torch.no_grad():
-  logits = model(input_batch)
+    logits = model(input_batch)
 preds = torch.topk(logits, k=5).indices.squeeze(0).tolist()
 
 print("-----")
 for idx in preds:
-  label = labels_map[idx]
-  prob = torch.softmax(logits, dim=1)[0, idx].item()
-  print(f"{label:<75} ({prob * 100:.2f}%)")
+    label = labels_map[idx]
+    prob = torch.softmax(logits, dim=1)[0, idx].item()
+    print(f"{label:<75} ({prob * 100:.2f}%)")
 ```
 
 #### Example: Feature Extraction 
@@ -202,3 +202,37 @@ For more datasets result. Please see `research/README.md`.
 If you find a bug, create a GitHub issue, or even better, submit a pull request. Similarly, if you have questions, simply post them as GitHub issues.   
 
 I look forward to seeing what the community does with these models! 
+
+
+### Credit
+
+#### Densely Connected Convolutional Networks
+
+*Gao Huang, Zhuang Liu, Laurens van der Maaten, Kilian Q. Weinberger*
+
+##### Abstract
+
+Recent work has shown that convolutional networks can be substantially deeper, more accurate, 
+and efficient to train if they contain shorter connections between layers close to the input
+ and those close to the output. In this paper, we embrace this observation and introduce the 
+ Dense Convolutional Network (DenseNet), which connects each layer to every other layer in a 
+ feed-forward fashion. Whereas traditional convolutional networks with L layers have L connections
+  - one between each layer and its subsequent layer - our network has L(L+1)/2 direct connections. 
+  For each layer, the feature-maps of all preceding layers are used as inputs, and its own feature-maps 
+  are used as inputs into all subsequent layers. DenseNets have several compelling advantages: they 
+  alleviate the vanishing-gradient problem, strengthen feature propagation, encourage feature reuse, 
+  and substantially reduce the number of parameters. We evaluate our proposed architecture on four 
+  highly competitive object recognition benchmark tasks (CIFAR-10, CIFAR-100, SVHN, and ImageNet). 
+  DenseNets obtain significant improvements over the state-of-the-art on most of them, whilst requiring 
+  less computation to achieve high performance. Code and pre-trained models are available at this [https URL](https://github.com/liuzhuang13/DenseNet) .
+
+[paper](http://arxiv.org/pdf/1608.06993v5) [code](https://github.com/liuzhuang13/DenseNet)
+
+```text
+@article{DenseNet,
+title:{Densely Connected Convolutional Networks},
+author:{Gao Huang, Zhuang Liu, Laurens van der Maaten, Kilian Q. Weinberger},
+journal={cvpr},
+year={2016}
+}
+```
