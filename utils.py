@@ -18,6 +18,7 @@ from typing import Any, Dict, TypeVar, Optional
 
 import torch
 from torch import nn
+import re
 
 __all__ = [
     "accuracy", "load_state_dict", "make_directory", "ovewrite_named_param", "make_divisible", "save_checkpoint",
@@ -54,6 +55,10 @@ def load_state_dict(
         scheduler: torch.optim.lr_scheduler = None,
         load_mode: str = None,
 ) -> [nn.Module, nn.Module, str, int, float, torch.optim.Optimizer, torch.optim.lr_scheduler]:
+    pattern = re.compile(
+        r"^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$"
+    )
+
     # Load model weights
     checkpoint = torch.load(model_weights_path, map_location=lambda storage, loc: storage)
 
@@ -62,29 +67,37 @@ def load_state_dict(
         start_epoch = checkpoint["epoch"]
         best_acc1 = checkpoint["best_acc1"]
         # Load model state dict. Extract the fitted model weights
-        model_state_dict = model.state_dict()
-        state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}
-        # Overwrite the model weights to the current model (base model)
-        model_state_dict.update(state_dict)
-        model.load_state_dict(model_state_dict)
+        state_dict = checkpoint["state_dict"]
+        for key in list(state_dict.keys()):
+            res = pattern.match(key)
+            if res:
+                new_key = res.group(1) + res.group(2)
+                state_dict[new_key] = state_dict[key]
+                del state_dict[key]
+        model.load_state_dict(state_dict)
         # Load ema model state dict. Extract the fitted model weights
-        ema_model_state_dict = ema_model.state_dict()
-        ema_state_dict = {k: v for k, v in checkpoint["ema_state_dict"].items() if k in ema_model_state_dict.keys()}
-        # Overwrite the model weights to the current model (ema model)
-        ema_model_state_dict.update(ema_state_dict)
-        ema_model.load_state_dict(ema_model_state_dict)
+        ema_state_dict = checkpoint["ema_state_dict"]
+        for key in list(ema_state_dict.keys()):
+            res = pattern.match(key)
+            if res:
+                new_key = res.group(1) + res.group(2)
+                ema_state_dict[new_key] = ema_state_dict[key]
+                del ema_state_dict[key]
+        ema_model.load_state_dict(ema_state_dict)
         # Load the optimizer model
         optimizer.load_state_dict(checkpoint["optimizer"])
         # Load the scheduler model
         scheduler.load_state_dict(checkpoint["scheduler"])
     else:
         # Load model state dict. Extract the fitted model weights
-        model_state_dict = model.state_dict()
-        state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
-                      k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
-        # Overwrite the model weights to the current model
-        model_state_dict.update(state_dict)
-        model.load_state_dict(model_state_dict)
+        state_dict = checkpoint["state_dict"]
+        for key in list(state_dict.keys()):
+            res = pattern.match(key)
+            if res:
+                new_key = res.group(1) + res.group(2)
+                state_dict[new_key] = state_dict[key]
+                del state_dict[key]
+        model.load_state_dict(state_dict)
 
     return model, ema_model, start_epoch, best_acc1, optimizer, scheduler
 
