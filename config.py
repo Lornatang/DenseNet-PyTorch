@@ -33,7 +33,7 @@ model_std_parameters = [0.229, 0.224, 0.225]
 # Model number class
 model_num_classes = 1000
 # Current configuration parameter method
-mode = "test"
+mode = "train"
 # Experiment name, easy to save weights and log files
 exp_name = f"{model_arch_name}-ImageNet_1K"
 

@@ -2,11 +2,12 @@
 
 ## Overview
 
-This repository contains an op-for-op PyTorch reimplementation of [Searching for MobileNetV3](https://arxiv.org/pdf/1905.02244v5.pdf).
+This repository contains an op-for-op PyTorch reimplementation
+of [Densely Connected Convolutional Networks](https://arxiv.org/pdf/1608.06993v5.pdf).
 
 ## Table of contents
 
-- [MobileNetV3-PyTorch](#mobilenetv3-pytorch)
+- [DenseNet-PyTorch](#densenet-pytorch)
     - [Overview](#overview)
     - [Table of contents](#table-of-contents)
     - [Download weights](#download-weights)
@@ -18,7 +19,7 @@ This repository contains an op-for-op PyTorch reimplementation of [Searching for
     - [Result](#result)
     - [Contributing](#contributing)
     - [Credit](#credit)
-        - [Searching for MobileNetV3](#searching-for-mobilenetv3)
+        - [Densely Connected Convolutional Networks](#densely-connected-convolutional-networks)
 
 ## Download weights
 
@@ -40,12 +41,12 @@ Both training and testing only need to modify the `config.py` file.
 
 ### Test
 
-- line 29: `model_arch_name` change to `mobilenet_v3_small`.
+- line 29: `model_arch_name` change to `densenet121`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `test`.
-- line 89: `model_weights_path` change to `./results/pretrained_models/MobileNetV3_small-ImageNet_1K-73d198d1.pth.tar`.
+- line 89: `model_weights_path` change to `./results/pretrained_models/DenseNet121-ImageNet_1K-30a6e303.pth.tar`.
 
 ```bash
 python3 test.py
@@ -53,12 +54,12 @@ python3 test.py
 
 ### Train model
 
-- line 29: `model_arch_name` change to `mobilenet_v3_small`.
+- line 29: `model_arch_name` change to `densenet121`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `train`.
-- line 50: `pretrained_model_weights_path` change to `./results/pretrained_models/MobileNetV3_small-ImageNet_1K-73d198d1.pth.tar`.
+- line 50: `pretrained_model_weights_path` change to `./results/pretrained_models/DenseNet121-ImageNet_1K-30a6e303.pth.tar`.
 
 ```bash
 python3 train.py
@@ -66,12 +67,12 @@ python3 train.py
 
 ### Resume train model
 
-- line 29: `model_arch_name` change to `mobilenet_v3_small`.
+- line 29: `model_arch_name` change to `densenet121`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `train`.
-- line 53: `resume` change to `./samples/mobilenet_v3_small-ImageNet_1K/epoch_xxx.pth.tar`.
+- line 53: `resume` change to `./samples/densenet121-ImageNet_1K/epoch_xxx.pth.tar`.
 
 ```bash
 python3 train.py
@@ -79,17 +80,19 @@ python3 train.py
 
 ## Result
 
-Source of original paper results: [https://arxiv.org/pdf/1905.02244v5.pdf](https://arxiv.org/pdf/1905.02244v5.pdf))
+Source of original paper results: [https://arxiv.org/pdf/1608.06993v5.pdf](https://arxiv.org/pdf/1608.06993v5.pdf))
 
 In the following table, the top-x error value in `()` indicates the result of the project, and `-` indicates no test.
 
-|         Model          |   Dataset   | Top-1 error (val) | Top-5 error (val) |
-|:----------------------:|:-----------:|:-----------------:|:-----------------:|
-| mobilenet_v3_small-1.0 | ImageNet_1K | 32.6%(**32.3%**)  |   -(**12.5%**)    |
-| mobilenet_v3_large-1.0 | ImageNet_1K | 24.8%(**24.7%**)  |    -(**7.4%**)    |
+|    Model    |   Dataset   | Top-1 error (val) | Top-5 error (val) |
+|:-----------:|:-----------:|:-----------------:|:-----------------:|
+| densenet121 | ImageNet_1K | 32.6%(**32.3%**)  |   -(**12.5%**)    |
+| densenet161 | ImageNet_1K | 24.8%(**24.7%**)  |    -(**7.4%**)    |
+| densenet169 | ImageNet_1K | 24.8%(**24.7%**)  |    -(**7.4%**)    |
+| densenet201 | ImageNet_1K | 24.8%(**24.7%**)  |    -(**7.4%**)    |
 
 ```bash
-# Download `MobileNetV3_small-ImageNet_1K-73d198d1.pth.tar` weights to `./results/pretrained_models`
+# Download `DenseNet121-ImageNet_1K-30a6e303.pth.tar` weights to `./results/pretrained_models`
 # More detail see `README.md<Download weights>`
 python3 ./inference.py 
 ```
@@ -101,13 +104,13 @@ Input:
 Output:
 
 ```text
-Build `mobilenet_v3_small` model successfully.
-Load `mobilenet_v3_small` model weights `/MobileNetV3-PyTorch/results/pretrained_models/MobileNetV3_small-ImageNet_1K-73d198d1.pth.tar` successfully.
-tench, Tinca tinca                                                          (19.38%)
-barracouta, snoek                                                           (7.93%)
-platypus, duckbill, duckbilled platypus, duck-billed platypus, Ornithorhynchus anatinus (6.00%)
-gar, garfish, garpike, billfish, Lepisosteus osseus                         (4.50%)
-triceratops                                                                 (1.97%)
+Build `densenet121` model successfully.
+Load `densenet121` model weights `/DenseNet-PyTorch/results/pretrained_models/DenseNet121-ImageNet_1K-30a6e303.pth.tar` successfully.
+tench, Tinca tinca                                                          (99.53%)
+barracouta, snoek                                                           (0.35%)
+armadillo                                                                   (0.04%)
+croquet ball                                                                (0.01%)
+bolete                                                                      (0.01%)
 ```
 
 ## Contributing
@@ -119,35 +122,33 @@ I look forward to seeing what the community does with these models!
 
 ### Credit
 
-#### Searching for MobileNetV3
+#### Densely Connected Convolutional Networks
 
 *Andrew Howard, Mark Sandler, Grace Chu, Liang-Chieh Chen, Bo Chen, Mingxing Tan, Weijun Wang, Yukun Zhu, Ruoming Pang,
 Vijay Vasudevan, Quoc V. Le, Hartwig Adam*
 
 ##### Abstract
 
-We present the next generation of MobileNets based on a combination of complementary search techniques as well as a
-novel architecture design. MobileNetV3 is tuned to mobile phone CPUs through a combination of hardware-aware network
-architecture search (NAS) complemented by the NetAdapt algorithm and then subsequently improved through novel
-architecture advances. This paper starts the exploration of how automated search algorithms and network design can work
-together to harness complementary approaches improving the overall state of the art. Through this process we create two
-new MobileNet models for release: MobileNetV3-Large and MobileNetV3-Small which are targeted for high and low resource
-use cases. These models are then adapted and applied to the tasks of object detection and semantic segmentation. For the
-task of semantic segmentation (or any dense pixel prediction), we propose a new efficient segmentation decoder Lite
-Reduced Atrous Spatial Pyramid Pooling (LR-ASPP). We achieve new state of the art results for mobile classification,
-detection and segmentation. MobileNetV3-Large is 3.2\% more accurate on ImageNet classification while reducing latency
-by 15\% compared to MobileNetV2. MobileNetV3-Small is 4.6\% more accurate while reducing latency by 5\% compared to
-MobileNetV2. MobileNetV3-Large detection is 25\% faster at roughly the same accuracy as MobileNetV2 on COCO detection.
-MobileNetV3-Large LR-ASPP is 30\% faster than MobileNetV2 R-ASPP at similar accuracy for Cityscapes segmentation.
+Recent work has shown that convolutional networks can be substantially deeper, more accurate, and efficient to train if
+they contain shorter connections between layers close to the input and those close to the output. In this paper, we
+embrace this observation and introduce the Dense Convolutional Network (DenseNet), which connects each layer to every
+other layer in a feed-forward fashion. Whereas traditional convolutional networks with L layers have L connections - one
+between each layer and its subsequent layer - our network has L(L+1)/2 direct connections. For each layer, the
+feature-maps of all preceding layers are used as inputs, and its own feature-maps are used as inputs into all subsequent
+layers. DenseNets have several compelling advantages: they alleviate the vanishing-gradient problem, strengthen feature
+propagation, encourage feature reuse, and substantially reduce the number of parameters. We evaluate our proposed
+architecture on four highly competitive object recognition benchmark tasks (CIFAR-10, CIFAR-100, SVHN, and ImageNet).
+DenseNets obtain significant improvements over the state-of-the-art on most of them, whilst requiring less computation
+to achieve high performance. Code and pre-trained models are available at this https URL .
 
-[[Paper]](https://arxiv.org/pdf/1905.02244v5.pdf)
+[[Paper]](https://arxiv.org/pdf/1608.06993v5.pdf)
 
 ```bibtex
-@inproceedings{howard2019searching,
-  title={Searching for mobilenetv3},
-  author={Howard, Andrew and Sandler, Mark and Chu, Grace and Chen, Liang-Chieh and Chen, Bo and Tan, Mingxing and Wang, Weijun and Zhu, Yukun and Pang, Ruoming and Vasudevan, Vijay and others},
-  booktitle={Proceedings of the IEEE/CVF international conference on computer vision},
-  pages={1314--1324},
-  year={2019}
+@inproceedings{huang2017densely,
+  title={Densely connected convolutional networks},
+  author={Huang, Gao and Liu, Zhuang and Van Der Maaten, Laurens and Weinberger, Kilian Q},
+  booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
+  pages={4700--4708},
+  year={2017}
 }
 ```
