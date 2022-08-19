@@ -1,237 +1,153 @@
 # DenseNet-PyTorch
 
-`Note: Now supports the more efficient DenseNet-BC (DenseNet-Bottleneck-Compressed) networks. Using the DenseNet-BC-190-40 model, it obtaines state of the art performance on CIFAR-10 and CIFAR-100.`
+## Overview
 
-### Update (Feb 18, 2020)
+This repository contains an op-for-op PyTorch reimplementation of [Searching for MobileNetV3](https://arxiv.org/pdf/1905.02244v5.pdf).
 
-The update is for ease of use and deployment.
+## Table of contents
 
- * [Example: Export to ONNX](#example-export-to-onnx)
- * [Example: Extract features](#example-feature-extraction)
- * [Example: Visual](#example-visual)
+- [MobileNetV3-PyTorch](#mobilenetv3-pytorch)
+    - [Overview](#overview)
+    - [Table of contents](#table-of-contents)
+    - [Download weights](#download-weights)
+    - [Download datasets](#download-datasets)
+    - [How Test and Train](#how-test-and-train)
+        - [Test](#test)
+        - [Train model](#train-model)
+        - [Resume train model](#resume-train-model)
+    - [Result](#result)
+    - [Contributing](#contributing)
+    - [Credit](#credit)
+        - [Searching for MobileNetV3](#searching-for-mobilenetv3)
 
-It is also now incredibly simple to load a pretrained model with a new number of classes for transfer learning:
+## Download weights
 
-```python
-from densenet_pytorch import DenseNet 
-model = DenseNet.from_pretrained('densenet121', num_classes=10)
-```
+- [Google Driver](https://drive.google.com/drive/folders/17ju2HN7Y6pyPK2CC_AqnAfTOe9_3hCQ8?usp=sharing)
+- [Baidu Driver](https://pan.baidu.com/s/1yNs4rqIb004-NKEdKBJtYg?pwd=llot)
 
-### Update (January 15, 2020)
+## Download datasets
 
-This update allows you to use NVIDIA's Apex tool for accelerated training. By default choice `hybrid training precision` + `dynamic loss amplified` version, if you need to learn more and details about `apex` tools, please visit https://github.com/NVIDIA/apex.
+Contains MNIST, CIFAR10&CIFAR100, TinyImageNet_200, MiniImageNet_1K, ImageNet_1K, Caltech101&Caltech256 and more etc.
 
-### Update (January 6, 2020)
+- [Google Driver](https://drive.google.com/drive/folders/1f-NSpZc07Qlzhgi6EbBEI1wTkN1MxPbQ?usp=sharing)
+- [Baidu Driver](https://pan.baidu.com/s/1arNM38vhDT7p4jKeD4sqwA?pwd=llot)
 
-This update adds a modular neural network, making it more flexible in use. It can be deployed to many common dataset classification tasks. Of course, it can also be used in your products.
+Please refer to `README.md` in the `data` directory for the method of making a dataset.
 
-### Overview
-This repository contains an op-for-op PyTorch reimplementation of [Densely Connected Convolutional Networks](https://arxiv.org/pdf/1608.06993.pdf).
+## How Test and Train
 
-The goal of this implementation is to be simple, highly extensible, and easy to integrate into your own projects. This implementation is a work in progress -- new features are currently being implemented.  
+Both training and testing only need to modify the `config.py` file.
 
-At the moment, you can easily:  
- * Load pretrained DenseNet models 
- * Use DenseNet models for classification or feature extraction 
+### Test
 
-_Upcoming features_: In the next few days, you will be able to:
- * Quickly finetune an DenseNet on your own dataset
- * Export DenseNet models for production
- 
-### Table of contents
-1. [About DenseNet](#about-densenet)
-2. [Installation](#installation)
-3. [Usage](#usage)
-    * [Load pretrained models](#loading-pretrained-models)
-    * [Example: Classify](#example-classification)
-    * [Example: Extract features](#example-feature-extraction)
-    * [Example: Export to ONNX](#example-export-to-onnx)
-    * [Example: Visual](#example-visual)
-4. [Contributing](#contributing) 
+- line 29: `model_arch_name` change to `mobilenet_v3_small`.
+- line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
+- line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
+- line 34: `model_num_classes` change to `1000`.
+- line 36: `mode` change to `test`.
+- line 89: `model_weights_path` change to `./results/pretrained_models/MobileNetV3_small-ImageNet_1K-73d198d1.pth.tar`.
 
-### About DenseNet
-
-If you're new to DenseNets, here is an explanation straight from the official PyTorch implementation: 
-
-Dense Convolutional Network (DenseNet), connects each layer to every other layer in a feed-forward fashion. Whereas traditional convolutional networks with L layers have L connections - one between each layer and its subsequent layer - our network has L(L+1)/2 direct connections. For each layer, the feature-maps of all preceding layers are used as inputs, and its own feature-maps are used as inputs into all subsequent layers. DenseNets have several compelling advantages: they alleviate the vanishing-gradient problem, strengthen feature propagation, encourage feature reuse, and substantially reduce the number of parameters.
-
-### Installation
-
-Install from pypi:
 ```bash
-$ pip3 install densenet_pytorch
+python3 test.py
 ```
 
-Install from source:
+### Train model
+
+- line 29: `model_arch_name` change to `mobilenet_v3_small`.
+- line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
+- line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
+- line 34: `model_num_classes` change to `1000`.
+- line 36: `mode` change to `train`.
+- line 50: `pretrained_model_weights_path` change to `./results/pretrained_models/MobileNetV3_small-ImageNet_1K-73d198d1.pth.tar`.
+
 ```bash
-$ git clone https://github.com/Lornatang/DenseNet-PyTorch
-$ cd DenseNet-PyTorch
-$ pip3 install -e .
-``` 
-
-### Usage
-
-#### Loading pretrained models
-
-Load an densenet121 network:
-```python
-from densenet_pytorch import DenseNet
-model = DenseNet.from_name("densenet121")
+python3 train.py
 ```
 
-Load a pretrained densenet11: 
-```python
-from densenet_pytorch import DenseNet
-model = DenseNet.from_pretrained("densenet121")
+### Resume train model
+
+- line 29: `model_arch_name` change to `mobilenet_v3_small`.
+- line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
+- line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
+- line 34: `model_num_classes` change to `1000`.
+- line 36: `mode` change to `train`.
+- line 53: `resume` change to `./samples/mobilenet_v3_small-ImageNet_1K/epoch_xxx.pth.tar`.
+
+```bash
+python3 train.py
 ```
 
-Their 1-crop error rates on imagenet dataset with pretrained models are listed below.
+## Result
 
-| Model structure | Top-1 error | Top-5 error |
-| --------------- | ----------- | ----------- |
-|  densenet121    | 25.35       | 7.83        |
-|  densenet169    | 24.00       | 7.00        |
-|  densenet201    | 22.80       | 6.43        |
-|  densenet161    | 22.35       | 6.20        |
+Source of original paper results: [https://arxiv.org/pdf/1905.02244v5.pdf](https://arxiv.org/pdf/1905.02244v5.pdf))
 
-#### Example: Classification
+In the following table, the top-x error value in `()` indicates the result of the project, and `-` indicates no test.
 
-We assume that in your current directory, there is a `img.jpg` file and a `labels_map.txt` file (ImageNet class names). These are both included in `examples/simple`. 
+|         Model          |   Dataset   | Top-1 error (val) | Top-5 error (val) |
+|:----------------------:|:-----------:|:-----------------:|:-----------------:|
+| mobilenet_v3_small-1.0 | ImageNet_1K | 32.6%(**32.3%**)  |   -(**12.5%**)    |
+| mobilenet_v3_large-1.0 | ImageNet_1K | 24.8%(**24.7%**)  |    -(**7.4%**)    |
 
-All pre-trained models expect input images normalized in the same way,
-i.e. mini-batches of 3-channel RGB images of shape `(3 x H x W)`, where `H` and `W` are expected to be at least `224`.
-The images have to be loaded in to a range of `[0, 1]` and then normalized using `mean = [0.485, 0.456, 0.406]`
-and `std = [0.229, 0.224, 0.225]`.
-
-Here's a sample execution.
-
-```python
-import json
-
-import torch
-import torchvision.transforms as transforms
-from PIL import Image
-
-from densenet_pytorch import DenseNet 
-
-# Open image
-input_image = Image.open("img.jpg")
-
-# Preprocess image
-preprocess = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
-input_tensor = preprocess(input_image)
-input_batch = input_tensor.unsqueeze(0)  # create a mini-batch as expected by the model
-
-# Load class names
-labels_map = json.load(open("labels_map.txt"))
-labels_map = [labels_map[str(i)] for i in range(1000)]
-
-# Classify with DenseNet121
-model = DenseNet.from_pretrained("densenet121")
-model.eval()
-
-# move the input and model to GPU for speed if available
-if torch.cuda.is_available():
-    input_batch = input_batch.to("cuda")
-    model.to("cuda")
-
-with torch.no_grad():
-    logits = model(input_batch)
-preds = torch.topk(logits, k=5).indices.squeeze(0).tolist()
-
-print("-----")
-for idx in preds:
-    label = labels_map[idx]
-    prob = torch.softmax(logits, dim=1)[0, idx].item()
-    print(f"{label:<75} ({prob * 100:.2f}%)")
+```bash
+# Download `MobileNetV3_small-ImageNet_1K-73d198d1.pth.tar` weights to `./results/pretrained_models`
+# More detail see `README.md<Download weights>`
+python3 ./inference.py 
 ```
 
-#### Example: Feature Extraction 
+Input:
 
-You can easily extract features with `model.extract_features`:
-```python
-import torch
-from densenet_pytorch import DenseNet 
-model = DenseNet.from_pretrained('densenet121')
+<span align="center"><img width="224" height="224" src="figure/n01440764_36.JPEG"/></span>
 
-# ... image preprocessing as in the classification example ...
-inputs = torch.randn(1, 3, 224, 224)
-print(inputs.shape) # torch.Size([1, 3, 224, 224])
-
-features = model.extract_features(inputs)
-print(features.shape) # torch.Size([1, 1024, 7, 7])
-```
-
-#### Example: Export to ONNX  
-
-Exporting to ONNX for deploying to production is now simple: 
-```python
-import torch 
-from densenet_pytorch import DenseNet 
-
-model = DenseNet.from_pretrained('densenet121')
-dummy_input = torch.randn(16, 3, 224, 224)
-
-torch.onnx.export(model, dummy_input, "demo.onnx", verbose=True)
-```
-
-#### Example: Visual
+Output:
 
 ```text
-cd $REPO$/framework
-sh start.sh
+Build `mobilenet_v3_small` model successfully.
+Load `mobilenet_v3_small` model weights `/MobileNetV3-PyTorch/results/pretrained_models/MobileNetV3_small-ImageNet_1K-73d198d1.pth.tar` successfully.
+tench, Tinca tinca                                                          (19.38%)
+barracouta, snoek                                                           (7.93%)
+platypus, duckbill, duckbilled platypus, duck-billed platypus, Ornithorhynchus anatinus (6.00%)
+gar, garfish, garpike, billfish, Lepisosteus osseus                         (4.50%)
+triceratops                                                                 (1.97%)
 ```
 
-Then open the browser and type in the browser address [http://127.0.0.1:10003/](http://127.0.0.1:10003/).
+## Contributing
 
-Enjoy it.
+If you find a bug, create a GitHub issue, or even better, submit a pull request. Similarly, if you have questions,
+simply post them as GitHub issues.
 
-#### ImageNet
-
-See `examples/imagenet` for details about evaluating on ImageNet.
-
-For more datasets result. Please see `research/README.md`.
-
-### Contributing
-
-If you find a bug, create a GitHub issue, or even better, submit a pull request. Similarly, if you have questions, simply post them as GitHub issues.   
-
-I look forward to seeing what the community does with these models! 
-
+I look forward to seeing what the community does with these models!
 
 ### Credit
 
-#### Densely Connected Convolutional Networks
+#### Searching for MobileNetV3
 
-*Gao Huang, Zhuang Liu, Laurens van der Maaten, Kilian Q. Weinberger*
+*Andrew Howard, Mark Sandler, Grace Chu, Liang-Chieh Chen, Bo Chen, Mingxing Tan, Weijun Wang, Yukun Zhu, Ruoming Pang,
+Vijay Vasudevan, Quoc V. Le, Hartwig Adam*
 
 ##### Abstract
 
-Recent work has shown that convolutional networks can be substantially deeper, more accurate, 
-and efficient to train if they contain shorter connections between layers close to the input
-and those close to the output. In this paper, we embrace this observation and introduce the 
-Dense Convolutional Network (DenseNet), which connects each layer to every other layer in a 
-feed-forward fashion. Whereas traditional convolutional networks with L layers have L connections - one between each layer and its subsequent layer - our network has L(L+1)/2 direct connections. 
-For each layer, the feature-maps of all preceding layers are used as inputs, and its own feature-maps 
-are used as inputs into all subsequent layers. DenseNets have several compelling advantages: they 
-alleviate the vanishing-gradient problem, strengthen feature propagation, encourage feature reuse, 
-and substantially reduce the number of parameters. We evaluate our proposed architecture on four 
-highly competitive object recognition benchmark tasks (CIFAR-10, CIFAR-100, SVHN, and ImageNet). 
-DenseNets obtain significant improvements over the state-of-the-art on most of them, whilst requiring 
-less computation to achieve high performance. Code and pre-trained models are available at this [https URL](https://github.com/liuzhuang13/DenseNet) .
+We present the next generation of MobileNets based on a combination of complementary search techniques as well as a
+novel architecture design. MobileNetV3 is tuned to mobile phone CPUs through a combination of hardware-aware network
+architecture search (NAS) complemented by the NetAdapt algorithm and then subsequently improved through novel
+architecture advances. This paper starts the exploration of how automated search algorithms and network design can work
+together to harness complementary approaches improving the overall state of the art. Through this process we create two
+new MobileNet models for release: MobileNetV3-Large and MobileNetV3-Small which are targeted for high and low resource
+use cases. These models are then adapted and applied to the tasks of object detection and semantic segmentation. For the
+task of semantic segmentation (or any dense pixel prediction), we propose a new efficient segmentation decoder Lite
+Reduced Atrous Spatial Pyramid Pooling (LR-ASPP). We achieve new state of the art results for mobile classification,
+detection and segmentation. MobileNetV3-Large is 3.2\% more accurate on ImageNet classification while reducing latency
+by 15\% compared to MobileNetV2. MobileNetV3-Small is 4.6\% more accurate while reducing latency by 5\% compared to
+MobileNetV2. MobileNetV3-Large detection is 25\% faster at roughly the same accuracy as MobileNetV2 on COCO detection.
+MobileNetV3-Large LR-ASPP is 30\% faster than MobileNetV2 R-ASPP at similar accuracy for Cityscapes segmentation.
 
-[paper](http://arxiv.org/pdf/1608.06993v5) [code](https://github.com/liuzhuang13/DenseNet)
+[[Paper]](https://arxiv.org/pdf/1905.02244v5.pdf)
 
-```text
-@article{DenseNet,
-title:{Densely Connected Convolutional Networks},
-author:{Gao Huang, Zhuang Liu, Laurens van der Maaten, Kilian Q. Weinberger},
-journal={cvpr},
-year={2016}
+```bibtex
+@inproceedings{howard2019searching,
+  title={Searching for mobilenetv3},
+  author={Howard, Andrew and Sandler, Mark and Chu, Grace and Chen, Liang-Chieh and Chen, Bo and Tan, Mingxing and Wang, Weijun and Zhu, Yukun and Pang, Ruoming and Vasudevan, Vijay and others},
+  booktitle={Proceedings of the IEEE/CVF international conference on computer vision},
+  pages={1314--1324},
+  year={2019}
 }
 ```
