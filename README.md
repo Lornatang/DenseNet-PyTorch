@@ -84,12 +84,12 @@ Source of original paper results: [https://arxiv.org/pdf/1608.06993v5.pdf](https
 
 In the following table, the top-x error value in `()` indicates the result of the project, and `-` indicates no test.
 
-|    Model    |   Dataset   | Top-1 error (val) | Top-5 error (val) |
-|:-----------:|:-----------:|:-----------------:|:-----------------:|
-| densenet121 | ImageNet_1K | 32.6%(**32.3%**)  |   -(**12.5%**)    |
-| densenet161 | ImageNet_1K | 24.8%(**24.7%**)  |    -(**7.4%**)    |
-| densenet169 | ImageNet_1K | 24.8%(**24.7%**)  |    -(**7.4%**)    |
-| densenet201 | ImageNet_1K | 24.8%(**24.7%**)  |    -(**7.4%**)    |
+|    Model    |   Dataset   | Top-1 error (val)  | Top-5 error (val) |
+|:-----------:|:-----------:|:------------------:|:-----------------:|
+| densenet121 | ImageNet_1K | 25.02%(**25.57%**) | 7.71%(**8.03%**)  |
+| densenet161 | ImageNet_1K | 23.80%(**22.92%**) | 6.85%(**6.44%**)  |
+| densenet169 | ImageNet_1K | 22.58%(**24.42%**) | 6.34%(**7.19%**)  |
+| densenet201 | ImageNet_1K | 22.33%(**23.12%**) | 6.15%(**6.64%**)  |
 
 ```bash
 # Download `DenseNet121-ImageNet_1K-30a6e303.pth.tar` weights to `./results/pretrained_models`

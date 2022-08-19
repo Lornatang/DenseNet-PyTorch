@@ -199,6 +199,6 @@ def densenet169(**kwargs: Any) -> DenseNet:
 
 
 def densenet201(**kwargs: Any) -> DenseNet:
-    model = DenseNet((6, 12, 48, 16), 64, 32, **kwargs)
+    model = DenseNet((6, 12, 48, 32), 64, 32, **kwargs)
 
     return model
